@@ -1,0 +1,13 @@
+# pitch outer loop parameters
+
+#Gains
+PGain=-0.5
+IGain=0.0
+DGain=-0.25
+
+#Pitch sensor filter parameters
+filterWn=6.0
+deadband=0.5
+
+#Offset for neutral (default: 41)
+zeroOffset=41

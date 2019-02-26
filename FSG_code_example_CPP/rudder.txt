@@ -1,0 +1,8 @@
+#servo inner loop parameters
+
+setMinDeg=-45.0
+setMaxDeg=45.0
+
+setCenterPWM=1640.0
+setMinPWM=2240.0
+setMaxPWM=1040.0

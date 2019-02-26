@@ -1,0 +1,13 @@
+# depth outer loop parameters
+
+#Gains
+PGain=-20.0
+IGain=0.0
+DGain=0.0
+
+#Depth sensor filter parameters
+filterWn=6.0
+deadband=0.5
+
+#Offset for neutral (default: 240)
+zeroOffset=240

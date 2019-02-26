@@ -1,0 +1,13 @@
+# configuration file for battery mover parameters
+
+#Gains
+PGain=-0.1
+IGain=0.0
+DGain=0.0
+
+#string pot parameters
+zeroCounts=240
+PistonTravelLimit=73.0
+slope=.12176
+filterWn=6.0
+deadband=0.5

@@ -1,0 +1,13 @@
+# configuration file for BCE parameters
+
+#Gains
+PGain=0.01
+IGain=0.0
+DGain=0.0
+
+#string pot parameters
+zeroCounts=253
+PistonTravelLimit=320.0
+slope=.12176
+filterWn=6.0
+deadband=0.5

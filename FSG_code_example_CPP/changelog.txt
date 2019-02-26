@@ -1,0 +1,90 @@
+    Modified FSG PCB V_1_1
+        - Freezes when doing a dive or any timed sequence (commented out SD card references)
+        - commented out sdLogger().appendLogFile(current_state, 0);     //open SD file once
+        - commented out sdLogger().appendLogFile(current_state, 1);    //writing data
+        - commented out sdLogger().appendLogFile(current_state, 0);    //close log file
+        - reduced timer to 20 seconds for bench testing
+        - modified ConfigFileIO for rudder()
+        - added in getFloatUserInput function from newer code
+        - changed LinearActuator & batt() in StaticDefs to match new pinouts from Bob/Matt/Troy fixes
+        - slowed down battery motor because it's silly fast at 30 volts (bench test)
+            * BCE gain is proportional 0.1 now 0.01
+        - BATT was moving in the wrong direction, gain was P: 0.10, I: 0.0, D: 0.0
+            * change gain to P: -0.10 (gain was flipped, I think the old circuit board had the voltages flipped ? ?)
+        - StateMachine changes for testing
+            * added keyboard_menu_STREAM_STATUS();
+            * added keyboard_menu_RUDDER_SERVO_settings();
+        - modified the zero on the battery position from 610 to 836
+        - BMM (batt) slope may be incorrect, seems low, currently 0.12176
+        - modified the zero on BCE from 253 to 460
+        - Pressure readings are wrong
+            * added readADCCounts() to omegaPX209 class to see channel readings
+            * modified omegaPX209 class to use filtered ADC readings from SpiADC.readCh4()
+        - fixed rudderLoop to headingLoop from newer code
+    Modified FSG PCB V_1_2
+        - added init headingLoop to main
+        - added pitch and heading outputs to STREAM_STATUS
+    NOTE: Flipped motor controller output on connector side with battery mass mover (BMM)
+        - Motor direction was opposite the BCE motor (because of gearing) 
+        - BMM P gain is now positive 0.02 (from -0.10)
+    Modified FSG PCB V_1_3
+        - added timing code for interrupt that drives the rudder (testing with o-scope)
+        - PID controller replaced with newer version from 5/29 code branch
+        - StateMachine hanged style of variables to match convention in code
+    Modified FSG PCB V_1_4
+        - adc tests
+    Modified FSG PCB V_1_5
+        - IMU update
+        - Testing print outs
+    Modified FSG PCB V_1_6
+        - new BMM zero count of 240 (confirmed manually)
+        - new BCE zero count of 400 (confirmed manually)
+        - Modified emergency climb to go to position 10 on the BMM, not zero (almost relying on the limit switch)
+        - fixed keyboard input; including typing in the timeout (can enter exact times)
+    Modified FSG PCB V_1_7
+        - removed data logger references
+        - fixed bug where I was logging data twice in the interrupt code and the main file
+        - fixed bug where Multi-Dive sequence wasn't restarting (the counter used to get the current state was not reset)
+    Modified FSG PCB v_1_7C
+        - fixing a bug with the data transmission (output had newline character) because of packet lengths
+        - new version blasts data and Python program requests lost packets, dramatically faster over USB, slightly faster over XBee
+        - fixed some format and terminal errors
+    Modified code 2018-08-06
+        - fixed bug with heading save feature, wasn't updating deadband properly
+        - modified input on servo sub-menu
+    Modified code 2018-08-07
+        - Float broadcast changed to command rudder to center in that state (whatever center is in the file)    
+        - Was sending the wrong command to the position dive (BMM)
+    Modified code 2018-08-14
+        - Fixed the deadband on "case Float_Broadcast" so it exits properly, I was seeing the BCE stop around 317 so I made a fixed deadband of 4.0 (anything 316 or above will exit the state)
+        - FIND_NEUTRAL was code was double-checked:
+            1) Starts with an offset of 25 mm from the manually found neutral BCE position (still buoyant), BMM starts at that neutral position
+            2) case NEUTRAL_SINKING: Every 5 seconds it retracts the BCE 5 mm.  When it reaches the input depth setpoint it switches to NEUTRAL_RISING
+            3) case NEUTRAL_SLOWLY_RISE:  Every 5 seconds it extends the BCE 2 mm.  When it starts to rise (depth rate is negative) (depth rate positive is sinking, negative is rising) it will immediately stop
+             and go to case NEUTRAL_CHECK_PITCH.  Removed an incorrect line of code that was setting BCE position with depthloop output.
+            4) case NEUTRAL_CHECK_PITCH: Every 10 seconds the pitch is adjusted +/- 0.5 mm depending on whether the nose is pitched up or pitched down
+                 (the timing is because the PV may move around in the water before it stabilizes)
+        - Homing Sequence now moves at -0.5 not -0.1 (was way too slow)
+    Modified code at Carderock (2018-08-15)
+        - Removed -1 multiplier from IMU outputs
+        - Pitch is incorrectly oriented now, pitch down
+        - Heading/Yaw is off by 90 degrees I believe (north is not north)
+        - Did not check roll
+        - KNOWN ISSUE of log file not having consistent line length (will throw off python data receiver)
+    Modified code at Carderock (2018-08-16)
+        - Observations at LASR lead to fixes on the save PID files, zero offsets were saving incorrectly, fixed
+    Modified code at NRL (2018-12-20)
+        - Added Macro to print out data to both serial ports
+        - Still working to make sure this would work when checking both serial ports (currently only accepts input from xbee)
+    Modified code at NRL (2018-12-21)
+        - Debugged the electrical problems on the pressure transducer. Still dithers about 0.1 foot or so being sampled at 10 Hz (adjust this rate???)
+        - Bob Eber added caps to the circuit board on the pressure transducer--was getting noise from motor controllers
+        - Rewrote oversample method on pressure transducer, it takes a moving average (size 20 array with shifting data)
+    Modified code at NRL (2019-01-16)
+        - Modified ADC to use 3.3v reference. Bob Eber corrected the resistor on the PCB. Code changed to reflect 3.3v reference and 11.0 multiplier.
+        - May need to raise this but need to see what the max 9 cell voltage is
+        - Corrected BCE, BMM, and other channel readings
+    Modified code at Woods Hole (2019-02-13)
+        - Changed the manual tuning mode to record the data (when a button is pressed)
+        - Changed the manual tuning mode to have large and small movements (10 mm and 1 mm)
+        - added enumeration for MANUAL_TUNE and added this text to the log in the MbedLogger

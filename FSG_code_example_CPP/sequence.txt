@@ -1,0 +1,5 @@
+0=dive,depth=10.0,pitch=-10.0,timeout=20.0;
+1=dive,depth=50.0,pitch=-20.0,timeout=21.0;
+2=dive,depth=45.0,pitch=-15.0,timeout=22.0;
+3=dive,depth=40.0,pitch=-10.0,timeout=23.0;
+4=exit

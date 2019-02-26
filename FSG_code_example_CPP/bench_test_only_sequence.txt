@@ -1,0 +1,16 @@
+0=dive,depth=10.0,pitch=-10.0,timeout=20.0;
+1=dive,depth=1.0,pitch=-12.0,timeout=21.0;
+2=dive,depth=2.0,pitch=-15.0,timeout=22.0;
+3=dive,depth=3.0,pitch=-13.0,timeout=23.0;
+4=dive,depth=4.0,pitch=-14.0,timeout=24.0;
+5=dive,depth=5.0,pitch=-15.0,timeout=25.0;
+6=dive,depth=6.0,pitch=-16.0,timeout=26.0;
+7=dive,depth=7.0,pitch=-17.0,timeout=27.0;
+8=dive,depth=8.0,pitch=-18.0,timeout=28.0;
+9=dive,depth=9.0,pitch=-19.0,timeout=29.0;
+10=dive,depth=10.0,pitch=-20.0,timeout=30.0;
+11=dive,depth=11.1,pitch=-11.1,timeout=11.1;
+12=exit
+
+# used to evaluate the operation, don't do this dive
+# last timeout controls float broadcast, but dives should be longer than 10 seconds for example

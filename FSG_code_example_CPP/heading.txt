@@ -1,0 +1,13 @@
+# HEADING (rudder outer loop) parameters
+
+#Gains
+PGain=-1.250000
+IGain=3.330000
+DGain=99.900002
+
+# HEADING sensor filter parameters
+filterWn=2.200000
+deadband=9.900000
+
+#HEADING offset
+zeroOffset=1.100000
