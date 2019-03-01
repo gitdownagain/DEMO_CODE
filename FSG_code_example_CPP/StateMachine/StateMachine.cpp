@@ -23,7 +23,6 @@ There is still some debug code used to check the output from the PCB.
 
 //print to both serial ports using this macro
 #define serialPrint(fmt, ...) pc().printf(fmt, ##__VA_ARGS__);xbee().printf(fmt, ##__VA_ARGS__)
-
  
 StateMachine::StateMachine() {
     _timeout = 20;            // generic timeout for every state, seconds
@@ -2146,7 +2145,8 @@ float StateMachine::getFloatUserInput() {
         serialPrint("\n\rPlease enter your number below and press ENTER:\r\n");
         char user_string [80];                      //variable to store input as a character array
     
-        xbee().scanf("%s", user_string);              //read formatted data from stdin
+        //read formatted data from stdin (included a PC scanf and even with readable() it did not work, picked up random characters
+        xbee().scanf("%s", user_string);
         serialPrint("\n\n\ruser_string was <%s>\r\n", user_string);
         
         //check through the string for invalid characters (decimal values 43 through 57)
@@ -2193,10 +2193,6 @@ void StateMachine::logFileMenu() {
         if (xbee().readable()) {
             serialPrint("\n\r>>> LOG FILE MENU. Y = Yes, erase file (and exit).  N = No, keep file (and exit).  P = Print file size. T = Tare depth sensor.<<<\n\r");
             FILE_MENU_key = xbee().getc();
-        }
-        if (pc().readable()) {
-            serialPrint("\n\r>>> LOG FILE MENU. Y = Yes, erase file (and exit).  N = No, keep file (and exit).  P = Print file size. T = Tare depth sensor.<<<\n\r");
-            FILE_MENU_key = pc().getc();
         }
         else {
             continue; // didn't get a user input, so keep waiting for it
