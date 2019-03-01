@@ -80,7 +80,7 @@ private:
     bool _end_transmit_packet;
     bool _end_sequence_transmission;
     int _packet_number;             //keep track of packet number for transmitting data
-    float _data_log[37];            //for logging all of the data from the outer and inner loops and so on
+    float _data_log[32];            //for logging all of the data from the outer and inner loops and so on
     vector <int> _data_packet;      //holds the current packet I'm processing
     std::vector<int>::iterator _it; //used to iterate through current data packet
     //check what I need to remove from this !!!!!!!!!!!!!!!!!!

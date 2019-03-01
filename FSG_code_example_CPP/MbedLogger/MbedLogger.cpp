@@ -35,15 +35,11 @@ MbedLogger::MbedLogger(string file_system_input_string) {
     _log_file_line_counter = 0;     //used to set timer in finite state machine based on size of log
     
     //heading string is 254 bytes long, FIXED LENGTH
-    _heading_string = "StateStr,St#,TimeSec,DepthCmd,DepthFt,PitchCmd,PitchDeg,RudderPWM,RudderCmdDeg,HeadDeg,bceCmd,bce_mm,battCmd,batt_mm,PitchRateDegSec,depth_rate_fps,SystemAmps,SystemVolts,AltChRd,Int_PSI,BCE_p,i,d,BATT_p,i,d,DEPTH_p,i,d,fq,db,PITCH_p,i,d,HEAD_p,i,d,fq,db\n";
+    _heading_string = "StateStr,St#,TimeSec,DepthCmd,DepthFt,PitchCmd,PitchDeg,RudderPWM,RudderCmdDeg,HeadDeg,bceCmd,bce_mm,battCmd,batt_mm,PitchRateDegSec,depthrate_fps,SystemAmps,SystemVolts,AltChRd,IntPSI,BCE_p,BCi,BCd,BATT_p,BTi,BTd,DEPTH_p,Di,Dd,PITCH_p,Pi,Pd,HEAD_p,Hi,Hd\n";
     _transmit_packet_num = 0;
-    
     _fsm_transmit_complete = false;
-    
     _end_transmit_packet = false;
-    
     _end_sequence_transmission = false;
-    
     _packet_number = 0;     //remove later
 }
 
@@ -115,153 +111,94 @@ int MbedLogger::getSystemTime() {
 void MbedLogger::recordData(int current_state) {
     int data_log_time = mbedLogger().getSystemTime();                 //read the system timer to get unix timestamp
     
-    for (int i = 0; i <= 35; i++) {
-        _data_log[i] = (float)2.0; // FOR DEBUGGING ONLY
-    }
+    _data_log[0] = depthLoop().getCommand();        //depth command
+    _data_log[1] = depthLoop().getPosition();       //depth reading (filtered depth)
+    _data_log[2] = pitchLoop().getCommand();        //pitch command
+    _data_log[3] = pitchLoop().getPosition();       //pitch reading (filtered pitch)
+    _data_log[4] = rudder().getSetPosition_pwm();      //rudder command PWM
+    _data_log[5] = rudder().getSetPosition_deg();      //rudder command DEG
+    _data_log[6] = headingLoop().getPosition();     //heading reading (filtered heading)
+    
+    _data_log[7] = bce().getSetPosition_mm();       //BCE command
+    _data_log[8] = bce().getPosition_mm();          //BCE reading
+    _data_log[9] = batt().getSetPosition_mm();      //Batt command
+    _data_log[10] = batt().getPosition_mm();         //Batt reading    
+    _data_log[11] = pitchLoop().getVelocity();       // pitchRate_degs (degrees per second)
+    _data_log[12] = depthLoop().getVelocity();      // depthRate_fps (feet per second)
+    
+    _data_log[13] = sensors().getCurrentInput();      // i_in
+    _data_log[14] = sensors().getVoltageInput();      // v_in
+    _data_log[15] = sensors().getAltimeterChannelReadings();   // Altimeter Channel Readings
+    _data_log[16] = sensors().getInternalPressurePSI();   // int_press_PSI
+    
+    //BCE_p,i,d,freq,deadband
+    _data_log[17] = bce().getControllerP();
+    _data_log[18] = bce().getControllerI();
+    _data_log[19] = bce().getControllerD();
+    
+    _data_log[20] = batt().getControllerP();
+    _data_log[21] = batt().getControllerI();
+    _data_log[22] = batt().getControllerD();
+    
+    _data_log[23] = depthLoop().getControllerP();
+    _data_log[24] = depthLoop().getControllerI();
+    _data_log[25] = depthLoop().getControllerD();
+    
+    _data_log[26] = pitchLoop().getControllerP();
+    _data_log[27] = pitchLoop().getControllerI();
+    _data_log[28] = pitchLoop().getControllerD();
+    
+    _data_log[29] = headingLoop().getControllerP();
+    _data_log[30] = headingLoop().getControllerI();
+    _data_log[31] = headingLoop().getControllerD();
     
     string string_state;
     if (current_state == SIT_IDLE)
-        string_state = "SIT_IDLE";
+        string_state = "________SIT_IDLE";
     else if (current_state == FIND_NEUTRAL)
-        string_state = "FIND_NEUTRAL";
+        string_state = "____FIND_NEUTRAL";
     else if (current_state == DIVE)
-        string_state = "DIVE";
+        string_state = "____________DIVE";
     else if (current_state == RISE)
-        string_state = "RISE";
+        string_state = "____________RISE";
     else if (current_state == FLOAT_LEVEL)
-        string_state = "FLOAT_LEVEL";
+        string_state = "_____FLOAT_LEVEL";
     else if (current_state == FLOAT_BROADCAST)
-        string_state = "FLOAT_BROADCAST";          
+        string_state = "_FLOAT_BROADCAST";          
     else if (current_state == EMERGENCY_CLIMB)
-        string_state = "EMERGENCY_CLIMB";
+        string_state = "_EMERGENCY_CLIMB";
     else if (current_state == MULTI_DIVE)
-        string_state = "MULTI_DIVE";
+        string_state = "______MULTI_DIVE";
     else if (current_state == MULTI_RISE)
-        string_state = "MULTI_RISE";
+        string_state = "______MULTI_RISE";
     else if (current_state == KEYBOARD)
-        string_state = "KEYBOARD";
+        string_state = "________KEYBOARD";
     else if (current_state == CHECK_TUNING)
-        string_state = "CHECK_TUNING";
+        string_state = "____CHECK_TUNING";
     else if (current_state == POSITION_DIVE)
-        string_state = "POSITION_DIVE"; 
+        string_state = "___POSITION_DIVE"; 
     else if (current_state == POSITION_RISE)
-        string_state = "POSITION_RISE";
+        string_state = "___POSITION_RISE";
     else if (current_state == TX_MBED_LOG) 
-        string_state = "TX_MBED_LOG";
+        string_state = "_____TX_MBED_LOG";
     else if (current_state == RX_SEQUENCE) 
         string_state = "RECEIVE_SEQUENCE";
     else if (current_state == MANUAL_TUNING)    //new 02/13/2019
-        string_state = "MANUAL_TUNE";   
+        string_state = "_____MANUAL_TUNE";   
         
     string blank_space = ""; //to get consistent spacing in the file (had a nonsense char w/o this)
     
     //below this format is used for data transmission, each packet needs to be 254 characters long (not counting newline char)
     
     //verified that this generates the correct line length of 254 using SOLELY an mbed 08/16/2018
-    fprintf(_fp, "%17s,%.2d,%10d,%5.1f,%5.1f,%6.1f,%6.1f,%4.0f,%4.0f,%6.1f,%5.1f,%6.1f,%5.1f,%6.1f,%6.1f,%6.1f,%6.3f,%6.2f,%5.0f,%6.2f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%6.2f,%5.3f,%5.3f,%4.1f,%4.1f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%4.1f,%4.1f\n",
+    fprintf(_fp, "%16s,%.2d,%10d,%06.1f,%06.1f,%06.1f,%06.1f,%06.0f,%06.0f,%06.1f,%06.1f,%06.1f,%06.1f,%06.1f,%06.1f,%06.1f,%06.3f,%06.2f,%06.0f,%06.2f,%06.3f,%06.3f,%06.3f,%06.3f,%06.3f,%06.3f,%06.2f,%06.3f,%06.3f,%06.3f,%06.3f,%06.3f,%06.3f,%06.3f,%06.3f\n",
     string_state.c_str(),current_state,data_log_time,
     _data_log[0],_data_log[1],_data_log[2],_data_log[3],_data_log[4],_data_log[5],_data_log[6],_data_log[7],_data_log[8],_data_log[9],_data_log[10],_data_log[11],_data_log[12],_data_log[13],_data_log[14],_data_log[15],
     _data_log[16],_data_log[17],_data_log[18],_data_log[19],_data_log[20],_data_log[21],_data_log[22],_data_log[23],_data_log[24],_data_log[25],_data_log[26],_data_log[27],_data_log[28],_data_log[29],_data_log[30],
-    _data_log[31],_data_log[32],_data_log[33],_data_log[34],_data_log[35]);
+    _data_log[31]);
 
     //each line in the file is 160 characters long text-wise, check this with a file read
 }
-
-//void MbedLogger::recordData(int current_state) {
-//    int data_log_time = mbedLogger().getSystemTime();                 //read the system timer to get unix timestamp
-//    
-//    _data_log[0] = depthLoop().getCommand();        //depth command
-//    _data_log[1] = depthLoop().getPosition();       //depth reading (filtered depth)
-//    _data_log[2] = pitchLoop().getCommand();        //pitch command
-//    _data_log[3] = pitchLoop().getPosition();       //pitch reading (filtered pitch)
-//    _data_log[4] = rudder().getSetPosition_pwm();      //rudder command PWM
-//    _data_log[5] = rudder().getSetPosition_deg();      //rudder command DEG
-//    _data_log[6] = headingLoop().getPosition();     //heading reading (filtered heading)
-//    
-//    _data_log[7] = bce().getSetPosition_mm();       //BCE command
-//    _data_log[8] = bce().getPosition_mm();          //BCE reading
-//    _data_log[9] = batt().getSetPosition_mm();      //Batt command
-//    _data_log[10] = batt().getPosition_mm();         //Batt reading    
-//    _data_log[11] = pitchLoop().getVelocity();       // pitchRate_degs (degrees per second)
-//    _data_log[12] = depthLoop().getVelocity();      // depthRate_fps (feet per second)
-//    
-//    _data_log[13] = sensors().getCurrentInput();      // i_in
-//    _data_log[14] = sensors().getVoltageInput();      // v_in
-//    _data_log[15] = sensors().getAltimeterChannelReadings();   // Altimeter Channel Readings
-//    _data_log[16] = sensors().getInternalPressurePSI();   // int_press_PSI
-//    
-//    //BCE_p,i,d,freq,deadband
-//    _data_log[17] = bce().getControllerP();
-//    _data_log[18] = bce().getControllerI();
-//    _data_log[19] = bce().getControllerD();
-//    
-//    _data_log[20] = batt().getControllerP();
-//    _data_log[21] = batt().getControllerI();
-//    _data_log[22] = batt().getControllerD();
-//    
-//    _data_log[23] = depthLoop().getControllerP();
-//    _data_log[24] = depthLoop().getControllerI();
-//    _data_log[25] = depthLoop().getControllerD();
-//    _data_log[26] = depthLoop().getFilterFrequency();
-//    _data_log[27] = depthLoop().getDeadband();
-//    
-//    _data_log[28] = pitchLoop().getControllerP();
-//    _data_log[29] = pitchLoop().getControllerI();
-//    _data_log[30] = pitchLoop().getControllerD();
-//    
-//    _data_log[31] = headingLoop().getControllerP();
-//    _data_log[32] = headingLoop().getControllerI();
-//    _data_log[33] = headingLoop().getControllerD();
-//    _data_log[34] = headingLoop().getFilterFrequency();
-//    _data_log[35] = headingLoop().getDeadband();
-//    
-//    string string_state;
-//    if (current_state == SIT_IDLE)
-//        string_state = "SIT_IDLE";
-//    else if (current_state == FIND_NEUTRAL)
-//        string_state = "FIND_NEUTRAL";
-//    else if (current_state == DIVE)
-//        string_state = "DIVE";
-//    else if (current_state == RISE)
-//        string_state = "RISE";
-//    else if (current_state == FLOAT_LEVEL)
-//        string_state = "FLOAT_LEVEL";
-//    else if (current_state == FLOAT_BROADCAST)
-//        string_state = "FLOAT_BROADCAST";          
-//    else if (current_state == EMERGENCY_CLIMB)
-//        string_state = "EMERGENCY_CLIMB";
-//    else if (current_state == MULTI_DIVE)
-//        string_state = "MULTI_DIVE";
-//    else if (current_state == MULTI_RISE)
-//        string_state = "MULTI_RISE";
-//    else if (current_state == KEYBOARD)
-//        string_state = "KEYBOARD";
-//    else if (current_state == CHECK_TUNING)
-//        string_state = "CHECK_TUNING";
-//    else if (current_state == POSITION_DIVE)
-//        string_state = "POSITION_DIVE"; 
-//    else if (current_state == POSITION_RISE)
-//        string_state = "POSITION_RISE";
-//    else if (current_state == TX_MBED_LOG) 
-//        string_state = "TX_MBED_LOG";
-//    else if (current_state == RX_SEQUENCE) 
-//        string_state = "RECEIVE_SEQUENCE";
-//    else if (current_state == MANUAL_TUNING)    //new 02/13/2019
-//        string_state = "MANUAL_TUNE";   
-//        
-//    string blank_space = ""; //to get consistent spacing in the file (had a nonsense char w/o this)
-//    
-//    //below this format is used for data transmission, each packet needs to be 254 characters long (not counting newline char)
-//    
-//    //verified that this generates the correct line length of 254 using SOLELY an mbed 08/16/2018
-//    fprintf(_fp, "%17s,%.2d,%10d,%5.1f,%5.1f,%6.1f,%6.1f,%4.0f,%4.0f,%6.1f,%5.1f,%6.1f,%5.1f,%6.1f,%6.1f,%6.1f,%6.3f,%6.2f,%5.0f,%6.2f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%6.2f,%5.3f,%5.3f,%4.1f,%4.1f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%5.3f,%4.1f,%4.1f\n",
-//    string_state.c_str(),current_state,data_log_time,
-//    _data_log[0],_data_log[1],_data_log[2],_data_log[3],_data_log[4],_data_log[5],_data_log[6],_data_log[7],_data_log[8],_data_log[9],_data_log[10],_data_log[11],_data_log[12],_data_log[13],_data_log[14],_data_log[15],
-//    _data_log[16],_data_log[17],_data_log[18],_data_log[19],_data_log[20],_data_log[21],_data_log[22],_data_log[23],_data_log[24],_data_log[25],_data_log[26],_data_log[27],_data_log[28],_data_log[29],_data_log[30],
-//    _data_log[31],_data_log[32],_data_log[33],_data_log[34],_data_log[35]);
-//
-//    //each line in the file is 160 characters long text-wise, check this with a file read
-//}
 
 int MbedLogger::getNumberOfPacketsInCurrentLog() {    
     //takes less than a second to complete, verified 7/24/2018
@@ -368,14 +305,14 @@ void MbedLogger::transmitDataPacket() {
 //transmit log file with fixed length of characters to receiver program
 void MbedLogger::transmitPacketNumber(int line_number) {
     int line_size = 254;    //length of lines in the log file, EVERY LINE MUST BE THE SAME LENGTH
-    char line_buffer[256]; //line buffer used to read file line by line
+    char line_buffer[254]; //line buffer used to read file line by line
         
     fseek(_fp,(line_size+1)*line_number,SEEK_SET);      //fseek must use the +1 to get the newline character
            
     //write over the internal _line_buffer               //start from the beginning and go to this position   
     fread(line_buffer, 1, line_size, _fp);              //read the line that is exactly 160 characters long
     
-    serialPrint("Debug (transmitPacketNumber): line_buffer <<%s>> (line size: %d)\n\r", line_buffer,line_size);
+    //serialPrint("Debug (transmitPacketNumber): line_buffer <<%s>> (line size: %d)\n\r", line_buffer,line_size);
     
     //    createDataPacket requires _packet_number, _total_number_of_packets, _current_line_length (data packet size)
     //    uses char _line_buffer[256] variable to hold characters read from the file
@@ -457,9 +394,6 @@ void MbedLogger::createDataPacket(char line_buffer_sent[], int line_length_sent)
 void MbedLogger::transmitMultiplePackets() {
     serialPrint("transmitMultiplePackets\n");
     
-    //static int transmit_state = HEADER_117;     //state in switch statement
-    //int incoming_byte = -1;                     //reset each time a character is read
-    //int requested_packet_number = -1;           //reset each time a character is read
     static int input_packet;                 //changed from char in previous iteration 03/28/2018
     static int transmit_crc_one = 0;            //hold crc values until they're reset with calculations
     static int transmit_crc_two = 0;
@@ -549,7 +483,6 @@ void MbedLogger::transmitMultiplePackets() {
                 //serialPrint("DEFAULT. HEADER_117\n\r");
                 current_state = HEADER_117; //reset here
                 break;
-            
         }
     }
     
