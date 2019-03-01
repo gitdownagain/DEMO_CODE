@@ -59,7 +59,6 @@ public:
 protected:
     PosVelFilter _filter;
     PIDController _pid;
-    Ticker _pulse;
     
     void refreshPVState();
     

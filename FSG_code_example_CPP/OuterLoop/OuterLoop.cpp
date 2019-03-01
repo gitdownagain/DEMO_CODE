@@ -1,7 +1,7 @@
 /*******************************************************************************
-Author:           Dan Edwards (some modifications by Troy 01/08/2018)
+Author:           Dan Edwards (some modifications by Troy)
 Title:            OuterLoop.cpp
-Date:             01/08/2018
+Date:             02/28/2019
 
 Description/Notes:
 
@@ -14,6 +14,10 @@ pressure transducer.
 
 Each outer loop is its own instance, created in the StaticDefs file.
 
+The outer loop uses filtered position and velocity data to feed into the PID
+loop that controls the output that is trying to get the system to its desired
+depth, pitch, and heading (it is attempting to apply a correction to reduce the
+error AKA get us to the desired state). 
 *******************************************************************************/
 
 #include "mbed.h"
@@ -22,8 +26,7 @@ Each outer loop is its own instance, created in the StaticDefs file.
 
 OuterLoop::OuterLoop(float interval, int sensor):
     _filter(),
-    _pid(),
-    _pulse()
+    _pid()
 {
     _Pgain = 0.5;
     _Igain = 0.0;
@@ -54,25 +57,12 @@ void OuterLoop::init() {
     setDeadband(_deadband);
 }
 
-// attaches the update function to an interval timer
-void OuterLoop::start() {
-    _pulse.attach(this,&OuterLoop::update, _dt);
-}
- 
-// detaches the update function from the interval timer
-void OuterLoop::stop() {
-    _pulse.detach();
-}
-
-void OuterLoop::runOuterLoop() {
-    update();
-}
-
+//removed references to the pulse that we are no longer using and the "update" function
 //each update the specified sensor is called, in this case we're running at 10 Hz from the main loop ticker
-void OuterLoop::update() { 
+void OuterLoop::runOuterLoop() { 
     // update the position velocity filter
     if (_sensor == 0) {
-        //_sensorVal = depth().getDepthFt();
+        //_sensorVal = depth().getDepthFt();    //old method, remove later
         _sensorVal = depth().newGetDepthFt();
     } else if (_sensor == 1) {
         _sensorVal = imu().getPitch();
@@ -82,10 +72,10 @@ void OuterLoop::update() {
         error("\n\r This sensor option does not exist");
     }
     
-    // use the sensor reading to update the PVF
+    // use the sensor reading to update the Position Velocity Filter (PVF)
     _filter.update(_dt, _sensorVal);
     
-    // refresh the filter results and load into class variables
+    // refresh the PVF results and load into class variables
     refreshPVState();
  
     // update the PID controller with latest data
